@@ -50,3 +50,11 @@ export type Note = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+// Added for AI Mark Analysis
+export interface SubjectPerformanceForAI {
+  subjectName: string;
+  averagePercentage: number;
+  testCount: number;
+  grade: string;
+}
