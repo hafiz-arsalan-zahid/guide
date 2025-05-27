@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon, PlusCircle, Trash2, ListChecks } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, ListChecks, Loader2 } from "lucide-react"; // Added Loader2 here
 import type { Todo } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
@@ -184,7 +184,7 @@ export default function TodosPage() {
                     >
                       {todo.text}
                       {todo.category && (
-                        <span className={`ml-2 text-xs ${todo.completed ? 'bg-muted text-muted-foreground' : 'bg-primary/20 text-primary-foreground'} px-1.5 py-0.5 rounded-full`}>
+                        <span className={`ml-2 text-xs ${todo.completed ? 'bg-muted text-muted-foreground' : 'bg-primary/20 text-primary'} px-1.5 py-0.5 rounded-full`}>
                           {todo.category}
                         </span>
                       )}
