@@ -178,33 +178,23 @@ const Sidebar = React.forwardRef<
       setHasMounted(true)
     }, [])
 
-    // Prioritize !hasMounted check for SSR consistency
     if (!hasMounted) {
-      // For dynamic sidebars, render an extremely simple placeholder.
-      // Consistent placeholder for SSR and initial client render.
       if (collapsible === "icon" || collapsible === "offcanvas") {
-        return (
-          <div
-            ref={ref}
-            className={cn("sidebar-ssr-placeholder", className)} // Pass className
-            style={{ width: 0, height: '100vh', overflow: 'hidden', flexShrink: 0 }}
-            data-ssr-placeholder="true"
-            id={props.id}
-            // DO NOT render children here if they depend on client-side state
-          />
-        );
+        // Return null for dynamic sidebars during SSR and initial client render
+        // This ensures server and client initial render match perfectly for this component slot.
+        return null;
       }
-      // For collapsible="none", the structure is more consistent, so render children.
+      // For collapsible="none" (static sidebar), the structure is consistent.
       return (
         <div
           data-sidebar="sidebar"
-          data-static-render="true"
+          data-static-render="true" // Indicate this is the intended static render
           ref={ref}
           className={cn(
             "flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground",
             className
           )}
-          {...props} // Spread props, including className
+          {...props}
         >
           {children}
         </div>
@@ -607,9 +597,9 @@ const SidebarMenuButton = React.forwardRef<
     
     const tooltipContent = typeof tooltip === "string" ? tooltip : tooltip.children;
     
-    // Correctly create tooltipProps for runtime
     let tooltipPropsRest: Omit<React.ComponentProps<typeof TooltipContent>, 'children'> = {};
     if (typeof tooltip === 'object' && tooltip !== null) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { children: tooltipChildrenToExclude, ...rest } = tooltip;
       tooltipPropsRest = rest;
     }
@@ -800,5 +790,3 @@ export {
   SidebarTrigger,
   useSidebar,
 }
-
-    
