@@ -178,55 +178,54 @@ const Sidebar = React.forwardRef<
       setHasMounted(true)
     }, [])
 
+    // Prioritize !hasMounted check for SSR consistency
     if (!hasMounted) {
-      if (collapsible === "none") {
-        // This case is consistent and can be rendered server-side
+      // For dynamic sidebars, render an extremely simple placeholder.
+      // Consistent placeholder for SSR and initial client render.
+      if (collapsible === "icon" || collapsible === "offcanvas") {
         return (
           <div
-            className={cn(
-              "flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground",
-              className
-            )}
             ref={ref}
-            {...props} // Spread props, including className
-          >
-            {children}
-          </div>
-        )
+            className={cn("sidebar-ssr-placeholder", className)} // Pass className
+            style={{ width: 0, height: '100vh', overflow: 'hidden', flexShrink: 0 }}
+            data-ssr-placeholder="true"
+            id={props.id}
+            // DO NOT render children here if they depend on client-side state
+          />
+        );
       }
-      // For dynamic sidebars, render an extremely simple placeholder.
-      // It takes the ref and any direct props like className.
-      // Its job is to be a valid DOM element that React can hydrate and then replace.
-      // Pass className from props to this placeholder.
+      // For collapsible="none", the structure is more consistent, so render children.
       return (
         <div
+          data-sidebar="sidebar"
+          data-static-render="true"
           ref={ref}
-          className={cn("sidebar-ssr-placeholder", className)}
-          style={{ width: 0, height: '100vh', overflow: 'hidden', flexShrink: 0 }} // Ensure it doesn't take up visible space but exists
-          data-ssr-placeholder="true"
-          // Do not spread all ...props here if they contain event handlers or complex objects not for DOM
-          // Only pass attributes that are safe and consistent (like className, id if any)
-          id={props.id}
-        />
+          className={cn(
+            "flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground",
+            className
+          )}
+          {...props} // Spread props, including className
+        >
+          {children}
+        </div>
       );
     }
 
-    // Client-side rendering after mount
+    // Client-side rendering after mount (hasMounted is true)
     if (isMobile) { 
       return (
         <Sheet open={openMobile} onOpenChange={setOpenMobile}>
           <UISheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className={cn("w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden", className)} // Pass className
+            className={cn("w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden", className)}
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
               } as React.CSSProperties
             }
             side={side}
-            // Pass other props to SheetContent if appropriate, or to Sheet itself
-            {...props} // Spreading props to SheetContent might be too broad, consider specifics
+            {...props} 
           >
             <div className="flex h-full w-full flex-col">{children}</div>
           </UISheetContent>
@@ -234,8 +233,7 @@ const Sidebar = React.forwardRef<
       )
     }
     
-    // Desktop version (isMobile is false)
-    // The outer div for desktop, props (including className) are applied here.
+    // Desktop version (isMobile is false and hasMounted is true)
     return (
       <div
         ref={ref}
@@ -246,40 +244,30 @@ const Sidebar = React.forwardRef<
         data-side={side}
         {...props}
       >
-        {/* Spacer div: its width changes based on 'open' state and 'collapsible' type */}
         <div
           className={cn(
             "duration-200 relative h-svh bg-transparent transition-[width] ease-linear",
-            // Logic for spacer width:
-            (state === "expanded" || collapsible === "offcanvas") ? "w-[var(--sidebar-width)]" : // Full width if expanded or offcanvas (when open)
-            (collapsible === "icon" ? "w-[var(--sidebar-width-icon)]" : "w-0"), // Icon width if icon mode and collapsed, else 0
+            (state === "expanded" || collapsible === "offcanvas") ? "w-[var(--sidebar-width)]" : 
+            (collapsible === "icon" ? "w-[var(--sidebar-width-icon)]" : "w-0"), 
              variant === "floating" || variant === "inset" ? 
               (state === "expanded" ? "w-[calc(var(--sidebar-width)_+_theme(spacing.4))]" : "w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]") 
               : "",
-            (collapsible === "offcanvas" && state === "collapsed") && "w-0" // Ensure offcanvas is 0 width when collapsed
+            (collapsible === "offcanvas" && state === "collapsed") && "w-0"
           )}
         />
-        {/* Fixed content div: its width and position also change */}
         <div
           className={cn(
             "duration-200 fixed inset-y-0 z-10 hidden h-svh transition-[left,right,width] ease-linear md:flex",
-            // Logic for fixed content div width:
             (state === "expanded" || collapsible === "offcanvas") ? "w-[var(--sidebar-width)]" :
             (collapsible === "icon" ? "w-[var(--sidebar-width-icon)]" : "w-0"),
-
             variant === "floating" || variant === "inset" ? 
              "p-2 " + (state === "expanded" ? "w-[calc(var(--sidebar-width)_+_theme(spacing.4)_+2px)]" : "w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]")
              : "",
             (collapsible === "offcanvas" && state === "collapsed") && "w-0",
-
-
-            // Positioning:
             side === "left" ? 
               ( (collapsible === "offcanvas" && state === "collapsed") ? "left-[calc(var(--sidebar-width)*-1)]" : "left-0" )
               : 
               ( (collapsible === "offcanvas" && state === "collapsed") ? "right-[calc(var(--sidebar-width)*-1)]" : "right-0" ),
-            
-            // Borders for non-floating/inset:
             !(variant === "floating" || variant === "inset") && (
                 (collapsible === "icon" && state === "collapsed") ? "" : (side === "left" ? "border-r" : "border-l")
             )
@@ -618,7 +606,14 @@ const SidebarMenuButton = React.forwardRef<
     }
     
     const tooltipContent = typeof tooltip === "string" ? tooltip : tooltip.children;
-    const tooltipProps = typeof tooltip === "string" ? {} : Omit<typeof tooltip, 'children'>;
+    
+    // Correctly create tooltipProps for runtime
+    let tooltipPropsRest: Omit<React.ComponentProps<typeof TooltipContent>, 'children'> = {};
+    if (typeof tooltip === 'object' && tooltip !== null) {
+      const { children: tooltipChildrenToExclude, ...rest } = tooltip;
+      tooltipPropsRest = rest;
+    }
+    const tooltipProps = typeof tooltip === "string" ? {} : tooltipPropsRest;
 
 
     return (
