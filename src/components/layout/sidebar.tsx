@@ -2,105 +2,68 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { APP_NAME, NAV_ITEMS } from "@/config/app";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import {
+  Sidebar as UISidebar, // Alias to avoid name collision
+  SidebarHeader,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarTrigger,
+  useSidebar,
+} from "@/components/ui/sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
-import Image from "next/image";
 
-export function Sidebar() {
+export function AppSidebar() { // Renamed to AppSidebar
   const pathname = usePathname();
-
-  const renderNavItems = () => (
-    <nav className="grid items-start gap-2 px-2 text-sm font-medium lg:px-4">
-      {NAV_ITEMS.map((item) => {
-        const isActive = pathname === item.href;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:text-sidebar-primary hover:bg-sidebar-accent",
-              isActive && "bg-sidebar-accent text-sidebar-primary"
-            )}
-          >
-            <item.icon className="h-4 w-4" />
-            {item.label}
-          </Link>
-        );
-      })}
-    </nav>
-  );
+  const { open } = useSidebar(); // Get sidebar state
 
   return (
-    <>
-      {/* Desktop Sidebar */}
-      <div className="hidden border-r bg-sidebar md:block">
-        <div className="flex h-full max-h-screen flex-col gap-2">
-          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold text-sidebar-primary">
-              <Image src="https://placehold.co/32x32.png" alt="App Logo" width={32} height={32} className="rounded-sm" data-ai-hint="logo abstract" />
-              <span>{APP_NAME}</span>
-            </Link>
-          </div>
-          <ScrollArea className="flex-1">
-            {renderNavItems()}
-          </ScrollArea>
-        </div>
-      </div>
-
-      {/* Mobile Sidebar Trigger (placed in Header) - This is a conceptual placement. Actual trigger is in Header.tsx */}
-    </>
-  );
-}
-
-export function MobileSidebar() {
-  const pathname = usePathname();
-  const renderNavItems = () => (
-    <nav className="grid items-start gap-2 px-2 text-sm font-medium lg:px-4">
-      {NAV_ITEMS.map((item) => {
-        const isActive = pathname === item.href;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-              isActive && "bg-muted text-primary"
-            )}
-          >
-            <item.icon className="h-4 w-4" />
-            {item.label}
-          </Link>
-        );
-      })}
-    </nav>
-  );
-  return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          className="shrink-0 md:hidden"
-        >
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">Toggle navigation menu</span>
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="flex flex-col bg-background">
-        <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-          <Link href="/" className="flex items-center gap-2 font-semibold text-primary">
-            <Image src="https://placehold.co/32x32.png" alt="App Logo" width={32} height={32} className="rounded-sm" data-ai-hint="logo abstract" />
-            <span>{APP_NAME}</span>
-          </Link>
-        </div>
-        <ScrollArea className="flex-1 mt-5">
-         {renderNavItems()}
+    <UISidebar collapsible="icon" className="border-sidebar-border">
+      <SidebarHeader className="border-b border-sidebar-border">
+        <Link href="/" className="flex items-center gap-2 font-semibold text-sidebar-primary">
+          <Image src="https://placehold.co/32x32.png" alt="App Logo" width={32} height={32} className="rounded-sm" data-ai-hint="logo abstract" />
+          <span className={cn("transition-opacity duration-300", open ? "opacity-100" : "opacity-0 max-w-0 overflow-hidden group-data-[collapsible=icon]:max-w-full group-data-[collapsible=icon]:opacity-100")}>
+            {APP_NAME}
+          </span>
+        </Link>
+      </SidebarHeader>
+      <SidebarContent asChild>
+        <ScrollArea className="flex-1">
+          <SidebarMenu className="p-2 lg:p-4">
+            {NAV_ITEMS.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <SidebarMenuItem key={item.href}>
+                  <Link href={item.href} legacyBehavior passHref>
+                    <SidebarMenuButton
+                      isActive={isActive}
+                      tooltip={{ children: item.label, side: "right", hidden: open }}
+                      className={cn(
+                        "text-sidebar-foreground hover:text-sidebar-primary hover:bg-sidebar-accent",
+                        isActive && "bg-sidebar-accent text-sidebar-primary font-semibold"
+                      )}
+                    >
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      <span className={cn("truncate transition-opacity duration-300", open ? "opacity-100" : "opacity-0 max-w-0 overflow-hidden")}>
+                        {item.label}
+                      </span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              );
+            })}
+          </SidebarMenu>
         </ScrollArea>
-      </SheetContent>
-    </Sheet>
-  )
+      </SidebarContent>
+      {/* SidebarFooter can be added here if needed */}
+    </UISidebar>
+  );
 }
+
+// MobileSidebar functionality is now handled by ui/sidebar and SidebarProvider
+// No need for a separate MobileSidebar component here if ui/sidebar is used correctly in MainLayout.
+// The SidebarTrigger in Header will handle mobile toggle.

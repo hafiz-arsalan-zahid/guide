@@ -120,8 +120,10 @@ export function StudyGuideClient() {
           <CardHeader>
             <CardTitle>Your Personalized Study Suggestions</CardTitle>
           </CardHeader>
-          <CardContent className="prose dark:prose-invert max-w-none whitespace-pre-wrap">
-            {suggestions.studySuggestions}
+          <CardContent>
+            <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap">
+              {suggestions.studySuggestions}
+            </div>
           </CardContent>
         </Card>
       )}

@@ -2,20 +2,53 @@
 
 import { useState, type FormEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PlusCircle, Trash2, Edit3, Save, FileText } from "lucide-react";
+import { PlusCircle, Trash2, Edit3, Save, FileText, Loader2 } from "lucide-react";
 import type { Note } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+
+const NOTES_STORAGE_KEY = "notes-data";
 
 export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [currentNote, setCurrentNote] = useState<Partial<Note> & { isEditing?: boolean }>({});
   const [showForm, setShowForm] = useState(false);
   const { toast } = useToast();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    try {
+      const storedNotes = localStorage.getItem(NOTES_STORAGE_KEY);
+      if (storedNotes) {
+        const parsedNotes: Note[] = JSON.parse(storedNotes).map((note: any) => ({
+          ...note,
+          createdAt: new Date(note.createdAt),
+          updatedAt: new Date(note.updatedAt),
+        }));
+        setNotes(parsedNotes.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()));
+      }
+    } catch (error) {
+      console.error("Failed to load notes from localStorage:", error);
+      toast({ title: "Error", description: "Could not load saved notes.", variant: "destructive" });
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    if (isMounted) {
+      try {
+        localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes));
+      } catch (error) {
+        console.error("Failed to save notes to localStorage:", error);
+        toast({ title: "Error", description: "Could not save notes.", variant: "destructive" });
+      }
+    }
+  }, [notes, isMounted, toast]);
+
 
   const handleSaveNote = (e: FormEvent) => {
     e.preventDefault();
@@ -24,8 +57,9 @@ export default function NotesPage() {
       return;
     }
 
+    let updatedNotes;
     if (currentNote.id) { // Editing existing note
-      setNotes(notes.map(n => n.id === currentNote.id ? { ...n, ...currentNote, updatedAt: new Date() } as Note : n));
+      updatedNotes = notes.map(n => n.id === currentNote.id ? { ...n, ...currentNote, title: currentNote.title as string, content: currentNote.content as string, updatedAt: new Date() } as Note : n);
       toast({ title: "Success", description: "Note updated successfully!" });
     } else { // Adding new note
       const newNote: Note = {
@@ -35,9 +69,10 @@ export default function NotesPage() {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      setNotes([newNote, ...notes]);
+      updatedNotes = [newNote, ...notes];
       toast({ title: "Success", description: "Note created successfully!" });
     }
+    setNotes(updatedNotes.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()));
     setCurrentNote({});
     setShowForm(false);
   };
@@ -53,9 +88,17 @@ export default function NotesPage() {
   }
 
   const deleteNote = (id: string) => {
-    setNotes(notes.filter((note) => note.id !== id));
+    setNotes(notes.filter((note) => note.id !== id).sort((a,b) => b.updatedAt.getTime() - a.updatedAt.getTime()));
     toast({ title: "Note Deleted", description: "The note has been removed." });
   };
+
+  if (!isMounted) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

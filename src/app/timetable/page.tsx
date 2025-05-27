@@ -6,21 +6,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Trash2, CalendarRange } from "lucide-react";
+import { PlusCircle, Trash2, CalendarRange, Loader2 } from "lucide-react";
 import type { TimetableEntry, Subject } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
+const TIMETABLE_STORAGE_KEY = "timetable-data";
+const SUBJECTS_STORAGE_KEY = "subjects-data"; // To load subjects from subject manager
+
 const daysOfWeek: TimetableEntry['day'][] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const timeSlots = Array.from({ length: 13 }, (_, i) => `${String(i + 7).padStart(2, '0')}:00`); // 7 AM to 7 PM
+const timeSlots = Array.from({ length: 15 }, (_, i) => `${String(i + 7).padStart(2, '0')}:00`); // 7 AM to 9 PM (21:00)
+
+const defaultSubjects: Subject[] = [
+    { id: "default-math", name: "Mathematics (Default)", color: "bg-blue-500" },
+    { id: "default-phy", name: "Physics (Default)", color: "bg-green-500" },
+    { id: "default-chem", name: "Chemistry (Default)", color: "bg-red-500" },
+];
 
 export default function TimetablePage() {
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
-  // Mock subjects for now. In a real app, these would come from the Subjects Manager.
-  const [subjects, setSubjects] = useState<Subject[]>([
-    { id: "math101", name: "Mathematics", color: "bg-blue-500" },
-    { id: "phy202", name: "Physics", color: "bg-green-500" },
-    { id: "chem303", name: "Chemistry", color: "bg-red-500" },
-  ]);
+  const [availableSubjects, setAvailableSubjects] = useState<Subject[]>(defaultSubjects);
 
   const [selectedDay, setSelectedDay] = useState<TimetableEntry['day']>("Monday");
   const [startTime, setStartTime] = useState("09:00");
@@ -28,6 +32,43 @@ export default function TimetablePage() {
   const [subjectId, setSubjectId] = useState("");
   const [location, setLocation] = useState("");
   const { toast } = useToast();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    try {
+      // Load Timetable
+      const storedTimetable = localStorage.getItem(TIMETABLE_STORAGE_KEY);
+      if (storedTimetable) {
+        setTimetable(JSON.parse(storedTimetable)
+          .sort((a: TimetableEntry, b: TimetableEntry) => daysOfWeek.indexOf(a.day) - daysOfWeek.indexOf(b.day) || a.startTime.localeCompare(b.startTime))
+        );
+      }
+      // Load Subjects
+      const storedSubjects = localStorage.getItem(SUBJECTS_STORAGE_KEY);
+      if (storedSubjects) {
+        const parsedSubjects: Subject[] = JSON.parse(storedSubjects);
+        if (parsedSubjects.length > 0) {
+          setAvailableSubjects(parsedSubjects);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load data from localStorage:", error);
+      toast({ title: "Error", description: "Could not load saved data.", variant: "destructive" });
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    if (isMounted) {
+      try {
+        localStorage.setItem(TIMETABLE_STORAGE_KEY, JSON.stringify(timetable));
+      } catch (error) {
+        console.error("Failed to save timetable to localStorage:", error);
+        toast({ title: "Error", description: "Could not save timetable.", variant: "destructive" });
+      }
+    }
+  }, [timetable, isMounted, toast]);
+
 
   const handleAddEntry = (e: FormEvent) => {
     e.preventDefault();
@@ -60,7 +101,15 @@ export default function TimetablePage() {
     toast({ title: "Entry Deleted", description: "Timetable entry removed." });
   };
   
-  const getSubjectById = (id: string) => subjects.find(s => s.id === id);
+  const getSubjectById = (id: string) => availableSubjects.find(s => s.id === id);
+
+  if (!isMounted) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -86,7 +135,10 @@ export default function TimetablePage() {
                 <Select value={subjectId} onValueChange={setSubjectId}>
                   <SelectTrigger id="subject-select"><SelectValue placeholder="Select subject" /></SelectTrigger>
                   <SelectContent>
-                    {subjects.map(sub => <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>)}
+                    {availableSubjects.length > 0 ? 
+                      availableSubjects.map(sub => <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>) :
+                      <SelectItem value="" disabled>No subjects available. Add subjects in Subject Manager.</SelectItem>
+                    }
                   </SelectContent>
                 </Select>
               </div>
@@ -105,9 +157,10 @@ export default function TimetablePage() {
                 <Input id="end-time" type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
               </div>
             </div>
-            <Button type="submit" className="w-full md:w-auto">
+            <Button type="submit" className="w-full md:w-auto" disabled={availableSubjects.length === 0}>
               <PlusCircle className="mr-2 h-4 w-4" /> Add to Timetable
             </Button>
+             {availableSubjects.length === 0 && <p className="text-sm text-destructive">Please add subjects in the 'Subjects' page first to create timetable entries.</p>}
           </form>
         </CardContent>
       </Card>
@@ -120,27 +173,28 @@ export default function TimetablePage() {
           <CardContent className="overflow-x-auto">
             <div className="min-w-[800px]"> {/* Ensure horizontal scroll for smaller screens */}
               <div className="grid grid-cols-[100px_repeat(7,1fr)] border-b">
-                <div className="p-2 font-semibold border-r">Time</div>
+                <div className="p-2 font-semibold border-r sticky left-0 bg-card z-10">Time</div>
                 {daysOfWeek.map(day => <div key={day} className="p-2 font-semibold text-center border-r last:border-r-0">{day.substring(0,3)}</div>)}
               </div>
               {timeSlots.map(slot => (
                 <div key={slot} className="grid grid-cols-[100px_repeat(7,1fr)] border-b items-stretch">
-                  <div className="p-2 border-r text-sm text-muted-foreground">{slot}</div>
+                  <div className="p-2 border-r text-sm text-muted-foreground sticky left-0 bg-card z-10">{slot}</div>
                   {daysOfWeek.map(day => {
                     const entriesInSlot = timetable.filter(entry => entry.day === day && entry.startTime <= slot && entry.endTime > slot);
                     return (
-                      <div key={`${day}-${slot}`} className="p-1 border-r last:border-r-0 min-h-[50px] relative group">
+                      <div key={`${day}-${slot}`} className="p-1 border-r last:border-r-0 min-h-[50px] relative group flex flex-col gap-0.5">
                         {entriesInSlot.map(entry => {
                           const subject = getSubjectById(entry.subjectId);
                           return (
-                            <div key={entry.id} className={`p-1.5 rounded text-xs text-white ${subject?.color || 'bg-gray-400'} mb-1 relative`}>
-                              <p className="font-semibold">{subject?.name}</p>
-                              {entry.location && <p className="text-xs opacity-80">{entry.location}</p>}
+                            <div key={entry.id} className={`p-1.5 rounded text-xs text-white ${subject?.color || 'bg-gray-400'} relative flex-grow flex flex-col justify-center`}>
+                              <p className="font-semibold truncate">{subject?.name || 'Unknown Subject'}</p>
+                              {entry.location && <p className="text-xs opacity-80 truncate">{entry.location}</p>}
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="absolute top-0 right-0 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity text-white hover:bg-white/20"
+                                className="absolute top-0 right-0 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity text-white hover:bg-white/20 focus-visible:opacity-100"
                                 onClick={() => deleteEntry(entry.id)}
+                                aria-label={`Delete ${subject?.name} at ${entry.startTime}`}
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>

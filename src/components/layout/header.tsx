@@ -1,20 +1,25 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { APP_NAME } from "@/config/app";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import Image from "next/image";
-import { MobileSidebar } from "./sidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar"; // Import SidebarTrigger
 
 export function Header() {
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-50">
-      <MobileSidebar />
+    <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30"> {/* z-index adjusted */}
+      {/* SidebarTrigger for mobile and to toggle desktop icon mode */}
+      <SidebarTrigger className="md:hidden" /> 
+      {/* 
+        The SidebarTrigger below can be used for desktop if you want a persistent button 
+        even when the sidebar is fully expanded. For icon-mode toggle, the ui/sidebar handles it.
+        If you want an explicit button in the header for desktop, uncomment and style as needed.
+      */}
+      {/* <SidebarTrigger className="hidden md:flex" />  */}
+      
       <div className="w-full flex-1">
         {/* Optional: Add a global search bar if needed in the future
         <form>
@@ -40,7 +45,7 @@ export function Header() {
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Ahmad's Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>Settings</DropdownMenuItem>
+          <DropdownMenuItem asChild><Link href="/settings">Settings</Link></DropdownMenuItem>
           <DropdownMenuItem>Support</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem>Logout</DropdownMenuItem>

@@ -1,9 +1,8 @@
-
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,9 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, ListChecks } from "lucide-react";
 import type { Todo } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+
+const TODOS_STORAGE_KEY = "todos-data";
 
 export default function TodosPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -21,6 +22,35 @@ export default function TodosPage() {
   const [newTodoCategory, setNewTodoCategory] = useState("");
   const [newTodoDueDate, setNewTodoDueDate] = useState<Date | undefined>();
   const { toast } = useToast();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    try {
+      const storedTodos = localStorage.getItem(TODOS_STORAGE_KEY);
+      if (storedTodos) {
+        const parsedTodos: Todo[] = JSON.parse(storedTodos).map((todo: any) => ({
+          ...todo,
+          dueDate: todo.dueDate ? new Date(todo.dueDate) : undefined,
+        }));
+        setTodos(parsedTodos);
+      }
+    } catch (error) {
+      console.error("Failed to load todos from localStorage:", error);
+      toast({ title: "Error", description: "Could not load saved todos.", variant: "destructive" });
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    if (isMounted) { // Only save to localStorage after initial mount and load
+      try {
+        localStorage.setItem(TODOS_STORAGE_KEY, JSON.stringify(todos));
+      } catch (error) {
+        console.error("Failed to save todos to localStorage:", error);
+        toast({ title: "Error", description: "Could not save todos.", variant: "destructive" });
+      }
+    }
+  }, [todos, isMounted, toast]);
 
   const handleAddTodo = (e: FormEvent) => {
     e.preventDefault();
@@ -56,6 +86,14 @@ export default function TodosPage() {
   };
   
   const categories = ["Work", "Personal", "Study", "Urgent"];
+
+  if (!isMounted) {
+    return ( // Or a more sophisticated loading skeleton
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" /> 
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -131,7 +169,7 @@ export default function TodosPage() {
               {todos.map((todo) => (
                 <li
                   key={todo.id}
-                  className="flex items-center justify-between p-3 bg-secondary/50 rounded-md hover:bg-secondary transition-colors"
+                  className="flex items-center justify-between p-3 bg-card border rounded-md hover:bg-secondary/70 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <Checkbox
@@ -142,16 +180,16 @@ export default function TodosPage() {
                     />
                     <label
                       htmlFor={`todo-${todo.id}`}
-                      className={`flex-1 ${todo.completed ? "line-through text-muted-foreground" : ""}`}
+                      className={`flex-1 ${todo.completed ? "line-through text-muted-foreground" : "text-card-foreground"}`}
                     >
                       {todo.text}
                       {todo.category && (
-                        <span className="ml-2 text-xs bg-primary/20 text-primary-foreground px-1.5 py-0.5 rounded-full">
+                        <span className={`ml-2 text-xs ${todo.completed ? 'bg-muted text-muted-foreground' : 'bg-primary/20 text-primary-foreground'} px-1.5 py-0.5 rounded-full`}>
                           {todo.category}
                         </span>
                       )}
                       {todo.dueDate && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className={`text-xs ${todo.completed ? "text-muted-foreground/70" : "text-muted-foreground"}`}>
                           Due: {format(todo.dueDate, "PPP")}
                         </p>
                       )}
@@ -168,6 +206,7 @@ export default function TodosPage() {
       ) : (
         <Card>
           <CardContent className="pt-6 text-center text-muted-foreground">
+            <ListChecks className="mx-auto h-12 w-12 text-gray-400 mb-2" />
             <p>No todos yet. Add some tasks to get started!</p>
           </CardContent>
         </Card>

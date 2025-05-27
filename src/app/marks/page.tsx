@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, type FormEvent, useEffect } from "react";
@@ -15,6 +14,8 @@ import type { Mark } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { generateMarkAnalysis, type GenerateMarkAnalysisInput, type GenerateMarkAnalysisOutput } from "@/ai/flows/generate-mark-analysis-flow";
 import { APP_NAME } from "@/config/app";
+
+const MARKS_STORAGE_KEY = "marks-data";
 
 interface SubjectSummary {
   subject: string;
@@ -33,11 +34,41 @@ export default function MarksPage() {
   const [totalMarks, setTotalMarks] = useState<number | string>("");
   const [date, setDate] = useState<Date | undefined>(new Date());
   const { toast } = useToast();
+  const [isMounted, setIsMounted] = useState(false);
 
   const [subjectSummaries, setSubjectSummaries] = useState<SubjectSummary[]>([]);
   const [aiSuggestions, setAiSuggestions] = useState<GenerateMarkAnalysisOutput | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+    try {
+      const storedMarks = localStorage.getItem(MARKS_STORAGE_KEY);
+      if (storedMarks) {
+        const parsedMarks: Mark[] = JSON.parse(storedMarks).map((mark: any) => ({
+          ...mark,
+          date: new Date(mark.date),
+        }));
+        setMarks(parsedMarks.sort((a,b) => b.date.getTime() - a.date.getTime()));
+      }
+    } catch (error) {
+      console.error("Failed to load marks from localStorage:", error);
+      toast({ title: "Error", description: "Could not load saved marks.", variant: "destructive" });
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    if(isMounted) {
+      try {
+        localStorage.setItem(MARKS_STORAGE_KEY, JSON.stringify(marks));
+      } catch (error) {
+        console.error("Failed to save marks to localStorage:", error);
+        toast({ title: "Error", description: "Could not save marks.", variant: "destructive" });
+      }
+    }
+  }, [marks, isMounted, toast]);
+
 
   const getGrade = (percentage: number): string => {
     if (percentage >= 90) return "A+";
@@ -130,7 +161,7 @@ export default function MarksPage() {
 
     let studentNameForAI = "Student"; 
     const appNameParts = APP_NAME.split("'s ");
-    if (appNameParts.length > 0 && appNameParts[0] !== APP_NAME) { // Check if split was successful
+    if (appNameParts.length > 0 && appNameParts[0] !== APP_NAME) { 
       studentNameForAI = appNameParts[0];
     }
 
@@ -160,6 +191,13 @@ export default function MarksPage() {
     }
   };
 
+  if (!isMounted) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
