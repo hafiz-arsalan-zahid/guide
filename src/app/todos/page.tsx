@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, type FormEvent } from "react";
@@ -77,13 +78,16 @@ export default function TodosPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="todo-category">Category (Optional)</Label>
-                 <Select value={newTodoCategory} onValueChange={setNewTodoCategory}>
+                 <Select 
+                    value={newTodoCategory} 
+                    onValueChange={(value) => setNewTodoCategory(value === "_none_" ? "" : value)}
+                  >
                   <SelectTrigger id="todo-category">
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="_none_">None</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
