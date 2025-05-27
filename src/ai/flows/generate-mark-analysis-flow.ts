@@ -27,13 +27,13 @@ const GenerateMarkAnalysisInputSchema = z.object({
 export type GenerateMarkAnalysisInput = z.infer<typeof GenerateMarkAnalysisInputSchema>;
 
 const GenerateMarkAnalysisOutputSchema = z.object({
-  analysisTitle: z.string().describe("A catchy, positive, and encouraging title for the analysis report (e.g., 'Your Path to Success!', 'Keep Up the Great Work! Highlights & Tips')."),
-  overallFeedback: z.string().describe("General feedback based on the overall performance. Should be constructive and balanced, mentioning strengths and areas for improvement. Should be 2-3 sentences."),
+  analysisTitle: z.string().describe("A catchy, positive, and encouraging title for the analysis report (e.g., 'Your Path to Success!', 'Keep Up the Great Work! Highlights & Tips'). Use Markdown for emphasis if needed."),
+  overallFeedback: z.string().describe("General feedback based on the overall performance. Should be constructive and balanced, mentioning strengths and areas for improvement. Should be 2-3 sentences. Use Markdown for emphasis if needed."),
   subjectSpecificSuggestions: z.array(z.object({
     subjectName: z.string().describe("The name of the subject for which the suggestion is being made."),
-    suggestion: z.string().describe("A specific, actionable suggestion for this subject. Max 2-3 sentences. Focus on study techniques, resource utilization, or specific topics if applicable.")
+    suggestion: z.string().describe("A specific, actionable suggestion for this subject. Max 2-3 sentences. Focus on study techniques, resource utilization, or specific topics if applicable. Use Markdown for emphasis or lists if appropriate.")
   })).describe("Detailed suggestions for 2-3 key subjects. Prioritize subjects needing improvement (Grade C or below, or percentage below 70%). If all subjects are strong, pick 1-2 to reinforce good habits or suggest advanced topics."),
-  encouragement: z.string().describe("A final encouraging and motivational message for the student. Should be 1-2 sentences.")
+  encouragement: z.string().describe("A final encouraging and motivational message for the student. Should be 1-2 sentences. Use Markdown for emphasis if needed.")
 });
 export type GenerateMarkAnalysisOutput = z.infer<typeof GenerateMarkAnalysisOutputSchema>;
 
@@ -46,6 +46,7 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateMarkAnalysisInputSchema},
   output: {schema: GenerateMarkAnalysisOutputSchema},
   prompt: `You are an expert, friendly, and insightful academic advisor AI. Your goal is to provide constructive feedback and actionable study suggestions to {{#if studentName}}{{studentName}}{{else}}the student{{/if}} based on their academic performance.
+Use Markdown for structuring your response where appropriate (e.g., use '*' or '_' for emphasis, but not for headings as the output structure already defines sections).
 
 Student's Performance Overview:
 - Overall Average: {{overallAverage}}%
@@ -97,4 +98,3 @@ const generateMarkAnalysisFlow = ai.defineFlow(
     return output;
   }
 );
-

@@ -15,7 +15,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       {/* This div wraps the header and the main content area. 
           It's a flex item of SidebarProvider's root, and flex-1 makes it take remaining horizontal space.
           It's flex-col so Header and main stack vertically. */}
-      <div className="flex flex-1 flex-col @container/main_content_wrapper"> 
+      <div className="flex flex-1 flex-col"> 
         <Header />
         {/* This main tag holds the actual page content. 
             It's flex-1 within its parent (the div above) to take available vertical space.

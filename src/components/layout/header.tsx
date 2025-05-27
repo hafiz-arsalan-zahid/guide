@@ -2,23 +2,19 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { APP_NAME } from "@/config/app";
+// import { APP_NAME } from "@/config/app"; // APP_NAME not used here
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { SidebarTrigger } from "@/components/ui/sidebar"; // Import SidebarTrigger
+import { SidebarTrigger } from "@/components/ui/sidebar"; 
 
 export function Header() {
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30"> {/* z-index adjusted */}
+    <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
       {/* SidebarTrigger for mobile and to toggle desktop icon mode */}
       <SidebarTrigger className="md:hidden" /> 
-      {/* 
-        The SidebarTrigger below can be used for desktop if you want a persistent button 
-        even when the sidebar is fully expanded. For icon-mode toggle, the ui/sidebar handles it.
-        If you want an explicit button in the header for desktop, uncomment and style as needed.
-      */}
-      {/* <SidebarTrigger className="hidden md:flex" />  */}
+      {/* Enabled SidebarTrigger for desktop to explicitly toggle icon/expanded mode */}
+      <SidebarTrigger className="hidden md:flex" /> 
       
       <div className="w-full flex-1">
         {/* Optional: Add a global search bar if needed in the future

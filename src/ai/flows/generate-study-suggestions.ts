@@ -25,7 +25,7 @@ export type GenerateStudySuggestionsInput = z.infer<
 const GenerateStudySuggestionsOutputSchema = z.object({
   studySuggestions: z
     .string()
-    .describe('AI-powered study suggestions for the given subjects and topics.'),
+    .describe('AI-powered study suggestions for the given subjects and topics. Formatted with Markdown.'),
 });
 
 export type GenerateStudySuggestionsOutput = z.infer<
@@ -43,13 +43,14 @@ const generateStudySuggestionsPrompt = ai.definePrompt({
   input: {schema: GenerateStudySuggestionsInputSchema},
   output: {schema: GenerateStudySuggestionsOutputSchema},
   prompt: `You are an AI-powered study guide assistant. A student is preparing for their exams and needs efficient study suggestions.
+Please use Markdown for formatting your suggestions (e.g., use '## Section Title' for headings, '- list item' for bullet points, and '*' or '_' for emphasis).
 
 Given the following subjects and exam topics, provide relevant and actionable study suggestions.
 
 Subjects: {{{subjects}}}
 Exam Topics: {{{examTopics}}}
 
-Study Suggestions:`,
+## Study Suggestions:`,
 });
 
 const generateStudySuggestionsFlow = ai.defineFlow(
