@@ -1,3 +1,4 @@
+
 import type { LucideIcon } from 'lucide-react';
 
 export type NavItem = {
@@ -9,12 +10,15 @@ export type NavItem = {
   subItems?: NavItem[];
 };
 
+export type TodoPriority = 'Low' | 'Medium' | 'High';
+
 export type Todo = {
   id: string;
   text: string;
   completed: boolean;
   category?: string;
   dueDate?: Date;
+  priority?: TodoPriority;
 };
 
 export type Mark = {
