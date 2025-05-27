@@ -13,7 +13,8 @@ import { CalendarIcon, PlusCircle, Trash2, BarChart2, Sparkles, Loader2 } from "
 import type { Mark } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { generateMarkAnalysis, type GenerateMarkAnalysisInput, type GenerateMarkAnalysisOutput } from "@/ai/flows/generate-mark-analysis-flow";
-import { APP_NAME } from "@/config/app";
+// APP_NAME is not directly used here for student name anymore, but might be used elsewhere.
+// import { APP_NAME } from "@/config/app"; 
 
 const MARKS_STORAGE_KEY = "marks-data";
 
@@ -159,14 +160,10 @@ export default function MarksPage() {
     setAiSuggestions(null);
     setAiError(null);
 
-    let studentNameForAI = "Student"; 
-    const appNameParts = APP_NAME.split("'s ");
-    if (appNameParts.length > 0 && appNameParts[0] !== APP_NAME) { 
-      studentNameForAI = appNameParts[0];
-    }
-
+    // The AI prompt can handle an optional student name.
+    // Passing undefined will make the AI use a generic term like "the student".
     const input: GenerateMarkAnalysisInput = {
-      studentName: studentNameForAI,
+      studentName: undefined, 
       subjectPerformances: subjectSummaries.map(s => ({
         subjectName: s.subject,
         averagePercentage: s.averagePercentage,

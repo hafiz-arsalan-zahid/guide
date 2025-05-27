@@ -3,13 +3,14 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight, Lightbulb, ListChecks, NotebookText } from "lucide-react";
 import Image from "next/image";
+import { APP_NAME } from "@/config/app";
 
 export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <Card className="shadow-lg">
         <CardHeader className="pb-4">
-          <CardTitle className="text-3xl font-bold">Welcome to Ahmad's LifeHub!</CardTitle>
+          <CardTitle className="text-3xl font-bold">Welcome to {APP_NAME}!</CardTitle>
           <CardDescription className="text-lg">
             Your central place to organize tasks, manage studies, and boost productivity.
           </CardDescription>

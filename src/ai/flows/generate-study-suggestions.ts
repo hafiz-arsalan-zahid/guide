@@ -25,7 +25,7 @@ export type GenerateStudySuggestionsInput = z.infer<
 const GenerateStudySuggestionsOutputSchema = z.object({
   studySuggestions: z
     .string()
-    .describe('AI-powered study suggestions for the given subjects and topics. Formatted with Markdown.'),
+    .describe('AI-powered study suggestions for the given subjects and topics. Formatted with Markdown, including headings (e.g., ## Section Title), bullet points, and emphasis.'),
 });
 
 export type GenerateStudySuggestionsOutput = z.infer<
@@ -43,13 +43,18 @@ const generateStudySuggestionsPrompt = ai.definePrompt({
   input: {schema: GenerateStudySuggestionsInputSchema},
   output: {schema: GenerateStudySuggestionsOutputSchema},
   prompt: `You are an AI-powered study guide assistant. A student is preparing for their exams and needs efficient study suggestions.
-Please use Markdown for formatting your suggestions (e.g., use '## Section Title' for headings, '- list item' for bullet points, and '*' or '_' for emphasis).
+Please use Markdown for formatting your suggestions. This includes:
+- Main sections or topics should use Level 2 Headings (e.g., '## Subject Deep Dive').
+- Sub-topics or key points can use Level 3 Headings (e.g., '### Key Concepts in Algebra').
+- Use bullet points ('- list item') for actionable tips or lists of resources.
+- Use emphasis like '*' or '_' for highlighting important terms or advice.
 
 Given the following subjects and exam topics, provide relevant and actionable study suggestions.
 
 Subjects: {{{subjects}}}
 Exam Topics: {{{examTopics}}}
 
+Please structure your response clearly with appropriate Markdown headings and formatting for readability.
 ## Study Suggestions:`,
 });
 
