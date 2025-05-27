@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, type FormEvent, useEffect } from "react";
@@ -9,14 +10,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { CalendarIcon, PlusCircle, Trash2, BarChart2, Sparkles, Loader2 } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, BarChart2, Sparkles, Loader2, Lock, Unlock, ShieldAlert } from "lucide-react";
 import type { Mark } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { generateMarkAnalysis, type GenerateMarkAnalysisInput, type GenerateMarkAnalysisOutput } from "@/ai/flows/generate-mark-analysis-flow";
-// APP_NAME is not directly used here for student name anymore, but might be used elsewhere.
-// import { APP_NAME } from "@/config/app"; 
 
 const MARKS_STORAGE_KEY = "marks-data";
+const APP_EDIT_LOCKED_KEY = "app-edit-locked"; // Session storage key
+const PASSKEY = "HappyHunYar#000";
 
 interface SubjectSummary {
   subject: string;
@@ -42,8 +43,13 @@ export default function MarksPage() {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
+  // Passkey lock state
+  const [isLocked, setIsLocked] = useState(true);
+  const [passkeyAttempt, setPasskeyAttempt] = useState("");
+
   useEffect(() => {
     setIsMounted(true);
+    // Load marks
     try {
       const storedMarks = localStorage.getItem(MARKS_STORAGE_KEY);
       if (storedMarks) {
@@ -56,6 +62,14 @@ export default function MarksPage() {
     } catch (error) {
       console.error("Failed to load marks from localStorage:", error);
       toast({ title: "Error", description: "Could not load saved marks.", variant: "destructive" });
+    }
+
+    // Check lock state from session storage
+    const appEditLocked = sessionStorage.getItem(APP_EDIT_LOCKED_KEY);
+    if (appEditLocked === 'false') {
+      setIsLocked(false);
+    } else {
+      setIsLocked(true);
     }
   }, [toast]);
 
@@ -70,6 +84,22 @@ export default function MarksPage() {
     }
   }, [marks, isMounted, toast]);
 
+  const handleUnlockAttempt = () => {
+    if (passkeyAttempt === PASSKEY) {
+      sessionStorage.setItem(APP_EDIT_LOCKED_KEY, 'false');
+      setIsLocked(false);
+      setPasskeyAttempt("");
+      toast({ title: "Success", description: "Controls unlocked for this session." });
+    } else {
+      toast({ title: "Error", description: "Incorrect passkey.", variant: "destructive" });
+    }
+  };
+
+  const handleLockControls = () => {
+    sessionStorage.setItem(APP_EDIT_LOCKED_KEY, 'true');
+    setIsLocked(true);
+    toast({ title: "Controls Locked", description: "Editing has been locked." });
+  };
 
   const getGrade = (percentage: number): string => {
     if (percentage >= 90) return "A+";
@@ -111,12 +141,16 @@ export default function MarksPage() {
         grade: getGrade(percentage),
         testCount: data.count,
       };
-    }).sort((a,b) => a.subject.localeCompare(b.subject)); // Sort alphabetically by subject
+    }).sort((a,b) => a.subject.localeCompare(b.subject));
     setSubjectSummaries(calculatedSummaries);
   }, [marks]);
 
   const handleAddMark = (e: FormEvent) => {
     e.preventDefault();
+    if (isLocked) {
+      toast({ title: "Locked", description: "Please unlock controls to add a mark.", variant: "default" });
+      return;
+    }
     if (!subject.trim() || !testName.trim() || score === "" || totalMarks === "") {
       toast({ title: "Error", description: "All fields are required.", variant: "destructive" });
       return;
@@ -137,7 +171,7 @@ export default function MarksPage() {
       totalMarks: Number(totalMarks),
       date: date || new Date(),
     };
-    setMarks([newMark, ...marks].sort((a,b) => b.date.getTime() - a.date.getTime())); // Keep sorted by date desc
+    setMarks([newMark, ...marks].sort((a,b) => b.date.getTime() - a.date.getTime()));
     setSubject("");
     setTestName("");
     setScore("");
@@ -147,11 +181,19 @@ export default function MarksPage() {
   };
 
   const deleteMark = (id: string) => {
+    if (isLocked) {
+      toast({ title: "Locked", description: "Please unlock controls to delete a mark.", variant: "default" });
+      return;
+    }
     setMarks(marks.filter((mark) => mark.id !== id));
     toast({ title: "Mark Deleted", description: "The mark entry has been removed." });
   };
 
   const handleGetAiSuggestions = async () => {
+    if (isLocked) {
+      toast({ title: "Locked", description: "Please unlock controls to get AI insights.", variant: "default" });
+      return;
+    }
     if (marks.length === 0) {
       toast({ title: "No Data", description: "Please add some marks before generating AI insights.", variant: "default" });
       return;
@@ -160,8 +202,6 @@ export default function MarksPage() {
     setAiSuggestions(null);
     setAiError(null);
 
-    // The AI prompt can handle an optional student name.
-    // Passing undefined will make the AI use a generic term like "the student".
     const input: GenerateMarkAnalysisInput = {
       studentName: undefined, 
       subjectPerformances: subjectSummaries.map(s => ({
@@ -198,31 +238,68 @@ export default function MarksPage() {
 
   return (
     <div className="space-y-6">
+      <Card className="shadow-md border-orange-500/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldAlert className="h-6 w-6 text-orange-600" /> Access Control
+          </CardTitle>
+          <CardDescription>
+            {isLocked 
+              ? "Enter passkey to enable editing for this session." 
+              : "Controls are currently unlocked. You can add, edit, or delete items."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {isLocked ? (
+            <div className="flex items-center gap-2">
+              <Input
+                type="password"
+                value={passkeyAttempt}
+                onChange={(e) => setPasskeyAttempt(e.target.value)}
+                placeholder="Enter passkey"
+                className="max-w-xs"
+                aria-label="Passkey"
+              />
+              <Button onClick={handleUnlockAttempt} variant="outline">
+                <Unlock className="mr-2 h-4 w-4" /> Unlock
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                <p className="text-sm text-green-600 font-medium">Controls Unlocked.</p>
+                <Button onClick={handleLockControls} variant="destructive" size="sm">
+                    <Lock className="mr-2 h-4 w-4" /> Lock Controls
+                </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl font-semibold">Marks Manager</CardTitle>
-          <CardDescription>Track your academic performance effectively. Add marks and get AI insights.</CardDescription>
+          <CardDescription>Track your academic performance effectively. Add marks and get AI insights. {isLocked && "(Controls Locked)"}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAddMark} className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="subject-name">Subject</Label>
-                <Input id="subject-name" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g., Mathematics" />
+                <Input id="subject-name" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g., Mathematics" disabled={isLocked} />
               </div>
               <div>
                 <Label htmlFor="test-name">Test/Assignment Name</Label>
-                <Input id="test-name" value={testName} onChange={(e) => setTestName(e.target.value)} placeholder="e.g., Midterm Exam" />
+                <Input id="test-name" value={testName} onChange={(e) => setTestName(e.target.value)} placeholder="e.g., Midterm Exam" disabled={isLocked}/>
               </div>
             </div>
             <div className="grid md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="score">Score</Label>
-                <Input id="score" type="number" value={score} onChange={(e) => setScore(e.target.value)} placeholder="e.g., 85" min="0"/>
+                <Input id="score" type="number" value={score} onChange={(e) => setScore(e.target.value)} placeholder="e.g., 85" min="0" disabled={isLocked}/>
               </div>
               <div>
                 <Label htmlFor="total-marks">Total Marks</Label>
-                <Input id="total-marks" type="number" value={totalMarks} onChange={(e) => setTotalMarks(e.target.value)} placeholder="e.g., 100" min="1"/>
+                <Input id="total-marks" type="number" value={totalMarks} onChange={(e) => setTotalMarks(e.target.value)} placeholder="e.g., 100" min="1" disabled={isLocked}/>
               </div>
               <div>
                 <Label htmlFor="mark-date">Date</Label>
@@ -231,18 +308,19 @@ export default function MarksPage() {
                     <Button
                       variant={"outline"}
                       className={`w-full justify-start text-left font-normal ${!date && "text-muted-foreground"}`}
+                      disabled={isLocked}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {date ? format(date, "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
-                    <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+                    <Calendar mode="single" selected={date} onSelect={setDate} initialFocus disabled={isLocked}/>
                   </PopoverContent>
                 </Popover>
               </div>
             </div>
-            <Button type="submit" className="w-full md:w-auto">
+            <Button type="submit" className="w-full md:w-auto" disabled={isLocked}>
               <PlusCircle className="mr-2 h-4 w-4" /> Add Mark
             </Button>
           </form>
@@ -254,7 +332,7 @@ export default function MarksPage() {
           <CardHeader className="flex flex-row items-start justify-between gap-4">
             <div>
               <CardTitle>Recorded Marks</CardTitle>
-              <CardDescription>Detailed list of all your scores.</CardDescription>
+              <CardDescription>Detailed list of all your scores. {isLocked && "(Controls Locked)"}</CardDescription>
             </div>
             <div className="text-right shrink-0">
               <p className="text-sm text-muted-foreground">Overall Performance</p>
@@ -291,7 +369,7 @@ export default function MarksPage() {
                       <TableCell>{getGrade(percentage)}</TableCell>
                       <TableCell>{format(mark.date, "PP")}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => deleteMark(mark.id)} aria-label={`Delete mark for ${mark.testName}`}>
+                        <Button variant="ghost" size="icon" onClick={() => deleteMark(mark.id)} aria-label={`Delete mark for ${mark.testName}`} disabled={isLocked}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </TableCell>
@@ -302,14 +380,14 @@ export default function MarksPage() {
             </Table>
           </CardContent>
            <CardFooter className="flex-col items-start gap-2 sm:flex-row sm:justify-between">
-             <Button onClick={handleGetAiSuggestions} disabled={isAiLoading || marks.length === 0}>
+             <Button onClick={handleGetAiSuggestions} disabled={isAiLoading || marks.length === 0 || isLocked}>
               {isAiLoading ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating Insights...</>
               ) : (
                 <><Sparkles className="mr-2 h-4 w-4" /> Get AI Insights</>
               )}
             </Button>
-            <p className="text-xs text-muted-foreground">AI can provide suggestions based on your entered marks.</p>
+            <p className="text-xs text-muted-foreground">AI can provide suggestions based on your entered marks. {isLocked && "(Unlock to use)"}</p>
           </CardFooter>
         </Card>
       )}
@@ -353,7 +431,7 @@ export default function MarksPage() {
          <Card>
             <CardContent className="pt-6 text-center text-muted-foreground">
               <BarChart2 className="mx-auto h-12 w-12 text-gray-400 mb-2" />
-              <p>No marks recorded yet. Add your scores to see them here and get AI insights.</p>
+              <p>No marks recorded yet. Add your scores to see them here and get AI insights. {isLocked && "(Unlock controls to add marks)"}</p>
             </CardContent>
           </Card>
       )}
@@ -400,3 +478,5 @@ export default function MarksPage() {
     </div>
   );
 }
+
+    

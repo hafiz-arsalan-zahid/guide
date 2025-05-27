@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, type FormEvent, useEffect } from "react";
@@ -6,15 +7,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Trash2, CalendarRange, Loader2 } from "lucide-react";
+import { PlusCircle, Trash2, CalendarRange, Loader2, Lock, Unlock, ShieldAlert } from "lucide-react";
 import type { TimetableEntry, Subject } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
 const TIMETABLE_STORAGE_KEY = "timetable-data";
-const SUBJECTS_STORAGE_KEY = "subjects-data"; // To load subjects from subject manager
+const SUBJECTS_STORAGE_KEY = "subjects-data"; 
+const APP_EDIT_LOCKED_KEY = "app-edit-locked";
+const PASSKEY = "HappyHunYar#000";
 
 const daysOfWeek: TimetableEntry['day'][] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const timeSlots = Array.from({ length: 15 }, (_, i) => `${String(i + 7).padStart(2, '0')}:00`); // 7 AM to 9 PM (21:00)
+const timeSlots = Array.from({ length: 15 }, (_, i) => `${String(i + 7).padStart(2, '0')}:00`);
 
 const defaultSubjects: Subject[] = [
     { id: "default-math", name: "Mathematics (Default)", color: "bg-blue-500" },
@@ -34,17 +37,19 @@ export default function TimetablePage() {
   const { toast } = useToast();
   const [isMounted, setIsMounted] = useState(false);
 
+  // Passkey lock state
+  const [isLocked, setIsLocked] = useState(true);
+  const [passkeyAttempt, setPasskeyAttempt] = useState("");
+
   useEffect(() => {
     setIsMounted(true);
     try {
-      // Load Timetable
       const storedTimetable = localStorage.getItem(TIMETABLE_STORAGE_KEY);
       if (storedTimetable) {
         setTimetable(JSON.parse(storedTimetable)
           .sort((a: TimetableEntry, b: TimetableEntry) => daysOfWeek.indexOf(a.day) - daysOfWeek.indexOf(b.day) || a.startTime.localeCompare(b.startTime))
         );
       }
-      // Load Subjects
       const storedSubjects = localStorage.getItem(SUBJECTS_STORAGE_KEY);
       if (storedSubjects) {
         const parsedSubjects: Subject[] = JSON.parse(storedSubjects);
@@ -55,6 +60,13 @@ export default function TimetablePage() {
     } catch (error) {
       console.error("Failed to load data from localStorage:", error);
       toast({ title: "Error", description: "Could not load saved data.", variant: "destructive" });
+    }
+    // Check lock state
+    const appEditLocked = sessionStorage.getItem(APP_EDIT_LOCKED_KEY);
+    if (appEditLocked === 'false') {
+      setIsLocked(false);
+    } else {
+      setIsLocked(true);
     }
   }, [toast]);
 
@@ -69,9 +81,29 @@ export default function TimetablePage() {
     }
   }, [timetable, isMounted, toast]);
 
+  const handleUnlockAttempt = () => {
+    if (passkeyAttempt === PASSKEY) {
+      sessionStorage.setItem(APP_EDIT_LOCKED_KEY, 'false');
+      setIsLocked(false);
+      setPasskeyAttempt("");
+      toast({ title: "Success", description: "Controls unlocked for this session." });
+    } else {
+      toast({ title: "Error", description: "Incorrect passkey.", variant: "destructive" });
+    }
+  };
+
+  const handleLockControls = () => {
+    sessionStorage.setItem(APP_EDIT_LOCKED_KEY, 'true');
+    setIsLocked(true);
+    toast({ title: "Controls Locked", description: "Editing has been locked." });
+  };
 
   const handleAddEntry = (e: FormEvent) => {
     e.preventDefault();
+    if (isLocked) {
+      toast({ title: "Locked", description: "Unlock controls to add timetable entries.", variant: "default" });
+      return;
+    }
     if (!subjectId || !startTime || !endTime) {
       toast({ title: "Error", description: "Please select subject, start time, and end time.", variant: "destructive" });
       return;
@@ -91,12 +123,15 @@ export default function TimetablePage() {
     };
     setTimetable([...timetable, newEntry].sort((a,b) => daysOfWeek.indexOf(a.day) - daysOfWeek.indexOf(b.day) || a.startTime.localeCompare(b.startTime)));
     toast({ title: "Success", description: "Timetable entry added." });
-    // Reset form partially
     setSubjectId("");
     setLocation("");
   };
 
   const deleteEntry = (id: string) => {
+    if (isLocked) {
+      toast({ title: "Locked", description: "Unlock controls to delete timetable entries.", variant: "default" });
+      return;
+    }
     setTimetable(timetable.filter(entry => entry.id !== id));
     toast({ title: "Entry Deleted", description: "Timetable entry removed." });
   };
@@ -113,17 +148,54 @@ export default function TimetablePage() {
 
   return (
     <div className="space-y-6">
+      <Card className="shadow-md border-orange-500/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldAlert className="h-6 w-6 text-orange-600" /> Access Control
+          </CardTitle>
+          <CardDescription>
+            {isLocked 
+              ? "Enter passkey to enable editing for this session." 
+              : "Controls are currently unlocked. You can add or delete entries."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {isLocked ? (
+            <div className="flex items-center gap-2">
+              <Input
+                type="password"
+                value={passkeyAttempt}
+                onChange={(e) => setPasskeyAttempt(e.target.value)}
+                placeholder="Enter passkey"
+                className="max-w-xs"
+                aria-label="Passkey"
+              />
+              <Button onClick={handleUnlockAttempt} variant="outline">
+                <Unlock className="mr-2 h-4 w-4" /> Unlock
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                <p className="text-sm text-green-600 font-medium">Controls Unlocked.</p>
+                <Button onClick={handleLockControls} variant="destructive" size="sm">
+                    <Lock className="mr-2 h-4 w-4" /> Lock Controls
+                </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl font-semibold">Weekly Timetable</CardTitle>
-          <CardDescription>Visualize and manage your weekly schedule.</CardDescription>
+          <CardDescription>Visualize and manage your weekly schedule. {isLocked && "(Controls Locked)"}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAddEntry} className="space-y-4">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="day-select">Day</Label>
-                <Select value={selectedDay} onValueChange={(val) => setSelectedDay(val as TimetableEntry['day'])}>
+                <Select value={selectedDay} onValueChange={(val) => setSelectedDay(val as TimetableEntry['day'])} disabled={isLocked}>
                   <SelectTrigger id="day-select"><SelectValue placeholder="Select day" /></SelectTrigger>
                   <SelectContent>
                     {daysOfWeek.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}
@@ -132,7 +204,7 @@ export default function TimetablePage() {
               </div>
               <div>
                 <Label htmlFor="subject-select">Subject</Label>
-                <Select value={subjectId} onValueChange={setSubjectId}>
+                <Select value={subjectId} onValueChange={setSubjectId} disabled={isLocked}>
                   <SelectTrigger id="subject-select"><SelectValue placeholder="Select subject" /></SelectTrigger>
                   <SelectContent>
                     {availableSubjects.length > 0 ? 
@@ -144,20 +216,20 @@ export default function TimetablePage() {
               </div>
                <div>
                 <Label htmlFor="location">Location (Optional)</Label>
-                <Input id="location" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g., Room 101" />
+                <Input id="location" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g., Room 101" disabled={isLocked}/>
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="start-time">Start Time</Label>
-                <Input id="start-time" type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
+                <Input id="start-time" type="time" value={startTime} onChange={e => setStartTime(e.target.value)} disabled={isLocked}/>
               </div>
               <div>
                 <Label htmlFor="end-time">End Time</Label>
-                <Input id="end-time" type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+                <Input id="end-time" type="time" value={endTime} onChange={e => setEndTime(e.target.value)} disabled={isLocked}/>
               </div>
             </div>
-            <Button type="submit" className="w-full md:w-auto" disabled={availableSubjects.length === 0}>
+            <Button type="submit" className="w-full md:w-auto" disabled={availableSubjects.length === 0 || isLocked}>
               <PlusCircle className="mr-2 h-4 w-4" /> Add to Timetable
             </Button>
              {availableSubjects.length === 0 && <p className="text-sm text-destructive">Please add subjects in the 'Subjects' page first to create timetable entries.</p>}
@@ -169,9 +241,10 @@ export default function TimetablePage() {
         <Card>
           <CardHeader>
             <CardTitle>Your Schedule</CardTitle>
+            {isLocked && <CardDescription className="text-orange-600">Controls are locked. Unlock to manage timetable.</CardDescription>}
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            <div className="min-w-[800px]"> {/* Ensure horizontal scroll for smaller screens */}
+            <div className="min-w-[800px]">
               <div className="grid grid-cols-[100px_repeat(7,1fr)] border-b">
                 <div className="p-2 font-semibold border-r sticky left-0 bg-card z-10">Time</div>
                 {daysOfWeek.map(day => <div key={day} className="p-2 font-semibold text-center border-r last:border-r-0">{day.substring(0,3)}</div>)}
@@ -182,22 +255,25 @@ export default function TimetablePage() {
                   {daysOfWeek.map(day => {
                     const entriesInSlot = timetable.filter(entry => entry.day === day && entry.startTime <= slot && entry.endTime > slot);
                     return (
-                      <div key={`${day}-${slot}`} className="p-1 border-r last:border-r-0 min-h-[50px] relative group flex flex-col gap-0.5">
+                      <div key={`${day}-${slot}`} className={`p-1 border-r last:border-r-0 min-h-[50px] relative group flex flex-col gap-0.5 ${isLocked ? 'opacity-70' : ''}`}>
                         {entriesInSlot.map(entry => {
                           const subject = getSubjectById(entry.subjectId);
                           return (
                             <div key={entry.id} className={`p-1.5 rounded text-xs text-white ${subject?.color || 'bg-gray-400'} relative flex-grow flex flex-col justify-center`}>
                               <p className="font-semibold truncate">{subject?.name || 'Unknown Subject'}</p>
                               {entry.location && <p className="text-xs opacity-80 truncate">{entry.location}</p>}
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute top-0 right-0 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity text-white hover:bg-white/20 focus-visible:opacity-100"
-                                onClick={() => deleteEntry(entry.id)}
-                                aria-label={`Delete ${subject?.name} at ${entry.startTime}`}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
+                              {!isLocked && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute top-0 right-0 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity text-white hover:bg-white/20 focus-visible:opacity-100"
+                                  onClick={() => deleteEntry(entry.id)}
+                                  aria-label={`Delete ${subject?.name} at ${entry.startTime}`}
+                                  disabled={isLocked}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              )}
                             </div>
                           );
                         })}
@@ -213,10 +289,12 @@ export default function TimetablePage() {
         <Card>
           <CardContent className="pt-6 text-center text-muted-foreground">
              <CalendarRange className="mx-auto h-12 w-12 text-gray-400 mb-2" />
-            <p>Your timetable is empty. Add some entries to plan your week!</p>
+            <p>Your timetable is empty. {isLocked ? "Unlock controls to plan your week." : "Add some entries to plan your week!"}</p>
           </CardContent>
         </Card>
       )}
     </div>
   );
 }
+
+    
