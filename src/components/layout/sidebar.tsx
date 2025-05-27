@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -12,14 +13,14 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarTrigger,
-  useSidebar,
+  // SidebarTrigger, // SidebarTrigger is usually in the Header
+  useSidebar, // Import useSidebar to get the open state
 } from "@/components/ui/sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function AppSidebar() { // Renamed to AppSidebar
   const pathname = usePathname();
-  const { open } = useSidebar(); // Get sidebar state
+  const { open, state } = useSidebar(); // Get sidebar state (open for logic, state for CSS group selectors)
 
   return (
     <UISidebar collapsible="icon" className="border-sidebar-border">
@@ -33,7 +34,14 @@ export function AppSidebar() { // Renamed to AppSidebar
       </SidebarHeader>
       <SidebarContent asChild>
         <ScrollArea className="flex-1">
-          <SidebarMenu className="p-2 lg:p-4">
+          <SidebarMenu 
+            className={cn(
+              // Apply p-2 when collapsed (state is 'collapsed' via group/peer)
+              "group-data-[state=collapsed]/peer:p-2", 
+              // Apply p-2 and lg:p-4 when expanded (state is 'expanded' via group/peer)
+              "group-data-[state=expanded]/peer:p-2 group-data-[state=expanded]/peer:lg:p-4"
+            )}
+          >
             {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -63,7 +71,3 @@ export function AppSidebar() { // Renamed to AppSidebar
     </UISidebar>
   );
 }
-
-// MobileSidebar functionality is now handled by ui/sidebar and SidebarProvider
-// No need for a separate MobileSidebar component here if ui/sidebar is used correctly in MainLayout.
-// The SidebarTrigger in Header will handle mobile toggle.

@@ -1,11 +1,12 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 96.1%; /* Light Gray #F5F5F5 */
-    --foreground: 233 64% 10%; /* Darker shade derived from Darkest Blue */
+    --background: 0 0% 98%; /* Was 0 0% 96.1% -> Lighter, more modern */
+    --foreground: 233 64% 10%; 
 
     --card: 0 0% 100%; /* White */
     --card-foreground: 233 64% 10%;
@@ -16,7 +17,7 @@
     --primary: 231 48% 48%; /* Deep Blue #3F51B5 */
     --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 0 0% 92%; /* Slightly darker gray */
+    --secondary: 0 0% 92%; 
     --secondary-foreground: 233 64% 10%;
 
     --muted: 0 0% 90%;
@@ -28,13 +29,13 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 85%;
-    --input: 0 0% 85%;
-    --ring: 231 48% 48%; /* Primary color for rings */
+    --border: 0 0% 90%; /* Was 0 0% 85% -> Slightly softer */
+    --input: 0 0% 85%; 
+    --ring: 231 48% 48%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem; /* Was 0.5rem */
 
-    /* Chart colors (can be adjusted if needed) */
+    /* Chart colors */
     --chart-1: 231 48% 48%;
     --chart-2: 261 44% 63%;
     --chart-3: 197 37% 24%;
@@ -42,44 +43,44 @@
     --chart-5: 27 87% 67%;
 
     /* Sidebar specific theme variables */
-    --sidebar-background: 0 0% 98%; /* Very light gray */
-    --sidebar-foreground: 233 64% 20%; /* Dark blue text */
-    --sidebar-primary: 231 48% 48%; /* Deep Blue for active items */
-    --sidebar-primary-foreground: 0 0% 100%; /* White text on active */
-    --sidebar-accent: 0 0% 92%; /* Hover background */
-    --sidebar-accent-foreground: 231 48% 48%; /* Deep blue text on hover */
-    --sidebar-border: 0 0% 88%;
+    --sidebar-background: 0 0% 96%; /* Was 0 0% 98%, distinct from new main bg */
+    --sidebar-foreground: 233 64% 20%; 
+    --sidebar-primary: 231 48% 48%; 
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 92%; 
+    --sidebar-accent-foreground: 231 48% 48%; 
+    --sidebar-border: 0 0% 92%; /* Was 0 0% 88% */
     --sidebar-ring: 231 48% 48%;
   }
 
   .dark {
-    --background: 240 10% 3.9%; /* Darker, more neutral dark */
-    --foreground: 0 0% 98%; /* Light Gray for text */
+    --background: 240 6% 10%; /* Was 240 10% 3.9% -> More dark gray, less black */
+    --foreground: 0 0% 98%; 
 
-    --card: 240 10% 6%; /* Slightly lighter than background for cards */
+    --card: 240 5% 14%; /* Was 240 10% 6% -> Lighter than new BG, distinct */
     --card-foreground: 0 0% 98%;
 
-    --popover: 240 10% 3.9%;
+    --popover: 240 6% 10%; /* Match new background */
     --popover-foreground: 0 0% 98%;
 
-    --primary: 231 60% 65%; /* Brighter primary for dark mode */
-    --primary-foreground: 233 64% 10%; /* Dark text on primary */
+    --primary: 231 60% 65%; 
+    --primary-foreground: 233 64% 10%;
 
-    --secondary: 240 4% 12%; /* Darker secondary */
+    --secondary: 240 4% 16%; /* Was 240 4% 12% -> Adjusted for new card/bg */
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 240 4% 18%; /* Muted, but distinct */
+    --muted: 240 4% 20%; /* Was 240 4% 18% */
     --muted-foreground: 0 0% 63.9%;
 
-    --accent: 261 50% 70%; /* Vibrant accent */
+    --accent: 261 50% 70%; 
     --accent-foreground: 0 0% 98%; 
 
-    --destructive: 0 62.8% 50.6%; /* More vibrant destructive */
+    --destructive: 0 62.8% 50.6%; 
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 4% 15%; /* Softer border */
-    --input: 240 4% 15%;
-    --ring: 231 60% 65%; /* Primary color for rings */
+    --border: 240 4% 20%; /* Was 240 4% 15% -> More definition against new card/bg */
+    --input: 240 4% 20%; /* Match new border */
+    --ring: 231 60% 65%; 
 
     /* Chart colors for dark mode */
     --chart-1: 231 60% 65%;
@@ -89,13 +90,13 @@
     --chart-5: 340 80% 60%;
 
     /* Sidebar specific theme variables for dark mode */
-    --sidebar-background: 240 10% 5%; /* Slightly different from main dark BG */
-    --sidebar-foreground: 0 0% 90%; /* Light gray text */
-    --sidebar-primary: 231 60% 68%; /* Lighter Deep Blue for active items */
-    --sidebar-primary-foreground: 233 64% 10%; /* Dark text on active */
-    --sidebar-accent: 240 4% 14%; /* Hover background */
-    --sidebar-accent-foreground: 231 60% 75%; /* Lighter Deep Blue text on hover */
-    --sidebar-border: 240 4% 12%;
+    --sidebar-background: 240 6% 8%; /* Was 240 10% 5% -> Slightly distinct from main bg */
+    --sidebar-foreground: 0 0% 90%; 
+    --sidebar-primary: 231 60% 68%; 
+    --sidebar-primary-foreground: 233 64% 10%; 
+    --sidebar-accent: 240 4% 14%; 
+    --sidebar-accent-foreground: 231 60% 75%; 
+    --sidebar-border: 240 4% 15%; /* Was 240 4% 12% */
     --sidebar-ring: 231 60% 68%;
   }
 }
@@ -106,6 +107,5 @@
   }
   body {
     @apply bg-background text-foreground;
-    /* Removed explicit font-family to allow Next/Font from layout.tsx to take precedence */
   }
 }
