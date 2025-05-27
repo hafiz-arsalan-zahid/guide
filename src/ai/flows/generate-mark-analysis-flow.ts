@@ -18,7 +18,7 @@ const SubjectPerformanceSchema = z.object({
   grade: z.string().describe('The overall grade for this subject (e.g., A+, B, F).'),
 });
 
-export const GenerateMarkAnalysisInputSchema = z.object({
+const GenerateMarkAnalysisInputSchema = z.object({
   studentName: z.string().optional().describe("The student's name, if available (e.g., Ahmad)."),
   subjectPerformances: z.array(SubjectPerformanceSchema).describe('An array of performance data for each subject.'),
   overallAverage: z.number().describe('The overall average percentage across all subjects.'),
@@ -26,7 +26,7 @@ export const GenerateMarkAnalysisInputSchema = z.object({
 });
 export type GenerateMarkAnalysisInput = z.infer<typeof GenerateMarkAnalysisInputSchema>;
 
-export const GenerateMarkAnalysisOutputSchema = z.object({
+const GenerateMarkAnalysisOutputSchema = z.object({
   analysisTitle: z.string().describe("A catchy, positive, and encouraging title for the analysis report (e.g., 'Your Path to Success!', 'Keep Up the Great Work! Highlights & Tips')."),
   overallFeedback: z.string().describe("General feedback based on the overall performance. Should be constructive and balanced, mentioning strengths and areas for improvement. Should be 2-3 sentences."),
   subjectSpecificSuggestions: z.array(z.object({
@@ -97,3 +97,4 @@ const generateMarkAnalysisFlow = ai.defineFlow(
     return output;
   }
 );
+
