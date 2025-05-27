@@ -1,6 +1,7 @@
+
 import type { ReactNode } from 'react';
-import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
-import { AppSidebar } from './sidebar'; // Renamed Sidebar to AppSidebar to avoid name clash
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { AppSidebar } from './sidebar';
 import { Header } from './header';
 
 interface MainLayoutProps {
@@ -11,13 +12,18 @@ export function MainLayout({ children }: MainLayoutProps) {
   return (
     <SidebarProvider defaultOpen={true}>
       <AppSidebar />
-      <div className="flex flex-col @container/main"> {/* Added container for main area queries if needed */}
+      {/* This div wraps the header and the main content area. 
+          It's a flex item of SidebarProvider's root, and flex-1 makes it take remaining horizontal space.
+          It's flex-col so Header and main stack vertically. */}
+      <div className="flex flex-1 flex-col @container/main_content_wrapper"> 
         <Header />
-        <SidebarInset> {/* Use SidebarInset to wrap main content for proper layout with advanced sidebar */}
-          <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
-            {children}
-          </main>
-        </SidebarInset>
+        {/* This main tag holds the actual page content. 
+            It's flex-1 within its parent (the div above) to take available vertical space.
+            overflow-y-auto allows content to scroll if it exceeds viewport height.
+            Padding provides spacing around the page content. */}
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-background">
+          {children}
+        </main>
       </div>
     </SidebarProvider>
   );
