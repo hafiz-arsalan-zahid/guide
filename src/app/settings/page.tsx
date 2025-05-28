@@ -7,102 +7,167 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"; // Added Input
-import { Separator } from "@/components/ui/separator"; // Added Separator
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { User, Bell, Palette, Database, ShieldCheck } from "lucide-react";
 
 export default function SettingsPage() {
   return (
-    <div className="space-y-6">
-      <Card className="shadow-lg">
+    <div className="space-y-8">
+      <Card className="shadow-xl border-primary/20">
         <CardHeader>
-          <CardTitle className="text-2xl font-semibold">Settings</CardTitle>
-          <CardDescription>Manage your application preferences and account details.</CardDescription>
+          <CardTitle className="text-3xl font-bold tracking-tight">Application Settings</CardTitle>
+          <CardDescription className="text-md text-muted-foreground">
+            Customize your FocusFlow experience. Manage preferences for appearance, notifications, and your account.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-8">
-          {/* Appearance Settings */}
-          <section className="space-y-4">
-            <h3 className="text-lg font-medium text-foreground">Appearance</h3>
-            <div className="flex flex-col space-y-2 p-4 border rounded-lg">
-              <Label htmlFor="theme-toggle-button">Theme</Label>
-              <div className="flex items-center space-x-2">
-                 <ThemeToggle />
-                 <span className="text-sm text-muted-foreground">Cycle through Light, Dark, or System theme.</span>
-              </div>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Appearance Settings */}
+        <Card className="shadow-lg hover:shadow-xl transition-shadow">
+          <CardHeader className="flex flex-row items-center gap-3">
+            <Palette className="w-7 h-7 text-primary" />
+            <div>
+              <CardTitle className="text-xl">Appearance</CardTitle>
+              <CardDescription>Adjust how the application looks and feels.</CardDescription>
             </div>
-             <div className="p-4 border rounded-lg space-y-3">
-                <Label htmlFor="default-view">Default Dashboard View</Label>
-                <Select defaultValue="overview">
-                  <SelectTrigger id="default-view" className="w-full md:w-[280px]">
-                    <SelectValue placeholder="Select default view" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-background/50">
+              <Label htmlFor="theme-toggle-button" className="text-base">Theme</Label>
+              <ThemeToggle />
+            </div>
+            <div className="p-4 border rounded-lg space-y-3 bg-background/50">
+              <Label htmlFor="default-view" className="text-base">Default Dashboard View</Label>
+              <Select defaultValue="overview">
+                <SelectTrigger id="default-view" className="w-full">
+                  <SelectValue placeholder="Select default view" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="overview">Overview</SelectItem>
+                  <SelectItem value="todos">Todo List</SelectItem>
+                  <SelectItem value="marks">Marks Manager</SelectItem>
+                  <SelectItem value="notes">Quick Notes</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">Choose what you see first when you open the app.</p>
+            </div>
+             <div className="p-4 border rounded-lg space-y-3 bg-background/50">
+                <Label htmlFor="font-size" className="text-base">Font Size</Label>
+                <Select defaultValue="medium">
+                  <SelectTrigger id="font-size" className="w-full">
+                    <SelectValue placeholder="Select font size" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="overview">Overview</SelectItem>
-                    <SelectItem value="todos">Todo List</SelectItem>
-                    <SelectItem value="marks">Marks Manager</SelectItem>
+                    <SelectItem value="small">Small</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="large">Large</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">Choose what you see first when you open the app.</p>
+                <p className="text-sm text-muted-foreground">Adjust the text size across the application.</p>
               </div>
-          </section>
+          </CardContent>
+        </Card>
 
-          <Separator />
-
-          {/* Notification Settings */}
-          <section className="space-y-4">
-            <h3 className="text-lg font-medium text-foreground">Notifications</h3>
-            <div className="p-4 border rounded-lg space-y-3">
+        {/* Notification Settings */}
+        <Card className="shadow-lg hover:shadow-xl transition-shadow">
+          <CardHeader className="flex flex-row items-center gap-3">
+            <Bell className="w-7 h-7 text-primary" />
+            <div>
+              <CardTitle className="text-xl">Notifications</CardTitle>
+              <CardDescription>Manage how you receive alerts and updates.</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="p-4 border rounded-lg space-y-4 bg-background/50">
               <div className="flex items-center justify-between">
                 <Label htmlFor="email-notifications" className="flex flex-col space-y-1">
-                  <span>Email Notifications</span>
-                  <span className="font-normal leading-snug text-muted-foreground">
-                    Receive important updates and reminders via email.
+                  <span className="text-base">Email Notifications</span>
+                  <span className="font-normal leading-snug text-muted-foreground text-sm">
+                    Receive important updates via email.
                   </span>
                 </Label>
                 <Switch id="email-notifications" defaultChecked />
               </div>
-               <div className="flex items-center justify-between">
+              <Separator />
+              <div className="flex items-center justify-between">
                 <Label htmlFor="push-notifications" className="flex flex-col space-y-1">
-                  <span>Push Notifications</span>
-                  <span className="font-normal leading-snug text-muted-foreground">
-                    Get real-time alerts directly on your device (if supported).
+                  <span className="text-base">Push Notifications</span>
+                  <span className="font-normal leading-snug text-muted-foreground text-sm">
+                    Get real-time alerts on your device.
                   </span>
                 </Label>
                 <Switch id="push-notifications" />
               </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="task-reminders" className="flex flex-col space-y-1">
+                  <span className="text-base">Task Reminders</span>
+                  <span className="font-normal leading-snug text-muted-foreground text-sm">
+                    Get notified for upcoming due dates.
+                  </span>
+                </Label>
+                <Switch id="task-reminders" defaultChecked />
+              </div>
             </div>
-          </section>
-          
-          <Separator />
+          </CardContent>
+        </Card>
 
-          {/* Account Settings */}
-           <section className="space-y-4">
-            <h3 className="text-lg font-medium text-foreground">Account</h3>
-             <div className="p-4 border rounded-lg space-y-3">
-                <div>
-                  <Label htmlFor="username">Username</Label>
-                  <Input id="username" defaultValue="CurrentUser" className="mt-1"/>
-                </div>
-                <div>
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" type="email" defaultValue="user@example.com" className="mt-1"/>
-                </div>
-                <Button variant="outline">Change Password</Button>
-             </div>
-          </section>
+        {/* Account Settings */}
+        <Card className="shadow-lg hover:shadow-xl transition-shadow">
+          <CardHeader className="flex flex-row items-center gap-3">
+            <User className="w-7 h-7 text-primary" />
+            <div>
+              <CardTitle className="text-xl">Account</CardTitle>
+              <CardDescription>Manage your profile and security.</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="p-4 border rounded-lg space-y-4 bg-background/50">
+              <div>
+                <Label htmlFor="username" className="text-base">Username</Label>
+                <Input id="username" defaultValue="CurrentUser" className="mt-1 text-base" />
+              </div>
+              <div>
+                <Label htmlFor="email" className="text-base">Email Address</Label>
+                <Input id="email" type="email" defaultValue="user@example.com" className="mt-1 text-base" />
+              </div>
+              <Button variant="outline" className="w-full">Change Password</Button>
+              <Button variant="destructive" className="w-full">Delete Account</Button>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Separator />
-
-          {/* Data Management Placeholder */}
-          <section className="space-y-4">
-            <h3 className="text-lg font-medium text-foreground">Data Management</h3>
-            <div className="p-4 border-dashed border-2 border-muted-foreground/30 rounded-md">
-              <p className="text-center text-muted-foreground">
-                Options for exporting or deleting your data will be available here in the future.
+        {/* Data Management Placeholder */}
+        <Card className="shadow-lg hover:shadow-xl transition-shadow">
+          <CardHeader className="flex flex-row items-center gap-3">
+            <Database className="w-7 h-7 text-primary" />
+             <div>
+              <CardTitle className="text-xl">Data Management</CardTitle>
+              <CardDescription>Export or manage your application data.</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="p-4 border rounded-lg space-y-3 bg-background/50">
+               <Button variant="outline" className="w-full">Export My Data</Button>
+               <p className="text-sm text-muted-foreground text-center pt-2">
+                Options for importing or clearing specific data sets will be available here in the future.
               </p>
             </div>
-          </section>
-        </CardContent>
-      </Card>
+             <div className="p-4 border border-destructive/30 rounded-lg space-y-3 bg-destructive/5">
+                <Label htmlFor="passkey-setting" className="text-base flex items-center gap-2 text-destructive">
+                    <ShieldCheck className="w-5 h-5"/> Passkey Management
+                </Label>
+                <Input id="passkey-setting" type="password" placeholder="Enter current passkey to change" className="mt-1 text-base"/>
+                <Button variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10">Change Master Passkey</Button>
+                 <p className="text-xs text-destructive/80">
+                    The master passkey protects editing functionalities across the app. Changing it requires the current passkey.
+                  </p>
+              </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

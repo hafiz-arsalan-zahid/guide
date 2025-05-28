@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent as UISheetContent } from "@/components/ui/sheet" // Renamed SheetContent to avoid conflict
+import { Sheet, SheetContent as UISheetContent } from "@/components/ui/sheet" 
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -24,27 +24,26 @@ const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
-const SIDEBAR_WIDTH_ICON = "4rem" // Ensures this is 4rem
+const SIDEBAR_WIDTH_ICON = "4rem" 
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
-type SidebarContext = {
+type SidebarContextValue = {
   state: "expanded" | "collapsed"
   open: boolean
   setOpen: (open: boolean) => void
   openMobile: boolean
   setOpenMobile: (open: boolean) => void
-  isMobile: boolean | undefined // Can be undefined initially
+  isMobile: boolean | undefined 
   toggleSidebar: () => void
 }
 
-const SidebarContext = React.createContext<SidebarContext | null>(null)
+const SidebarContext = React.createContext<SidebarContextValue | null>(null)
 
 function useSidebar() {
   const context = React.useContext(SidebarContext)
   if (!context) {
     throw new Error("useSidebar must be used within a SidebarProvider.")
   }
-
   return context
 }
 
@@ -68,25 +67,49 @@ const SidebarProvider = React.forwardRef<
     },
     ref
   ) => {
-    const isMobileHookResult = useIsMobile() // This can be undefined initially
+    const isMobileHookResult = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
 
-    const [_open, _setOpen] = React.useState(defaultOpen)
-    const open = openProp ?? _open
+    // Initialize _open with defaultOpen for SSR consistency.
+    const [initialOpenStateForSSR] = React.useState(defaultOpen);
+    const [_open, _setOpen] = React.useState(initialOpenStateForSSR);
+    const open = openProp ?? _open; // If controlled, use openProp, else use internal _open state.
+    
+    React.useEffect(() => {
+      // Client-side only: sync with cookie if not controlled.
+      if (typeof document !== 'undefined' && openProp === undefined) {
+        const cookieValue = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith(`${SIDEBAR_COOKIE_NAME}=`))
+          ?.split("=")[1];
+        
+        let desiredOpenState = defaultOpen; // Fallback to defaultOpen
+        if (cookieValue !== undefined) {
+          desiredOpenState = cookieValue === 'true';
+        }
+
+        if (_open !== desiredOpenState) {
+          _setOpen(desiredOpenState);
+        }
+      }
+    }, [defaultOpen, openProp, _open]);
+
+
+    const currentOpenValue = openProp !== undefined ? openProp : _open;
     const setOpen = React.useCallback(
-      (value: boolean | ((value: boolean) => boolean)) => {
-        const openState = typeof value === "function" ? value(open) : value
+      (value: boolean | ((prev: boolean) => boolean)) => {
+        const newOpenState = typeof value === 'function' ? value(currentOpenValue) : value;
         if (setOpenProp) {
-          setOpenProp(openState)
+          setOpenProp(newOpenState);
         } else {
-          _setOpen(openState)
+          _setOpen(newOpenState);
         }
         if (typeof document !== 'undefined') {
-          document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+          document.cookie = `${SIDEBAR_COOKIE_NAME}=${newOpenState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
         }
       },
-      [setOpenProp, open]
-    )
+      [setOpenProp, currentOpenValue] 
+    );
 
     const toggleSidebar = React.useCallback(() => {
       return isMobileHookResult
@@ -112,7 +135,7 @@ const SidebarProvider = React.forwardRef<
 
     const state = open ? "expanded" : "collapsed"
 
-    const contextValue = React.useMemo<SidebarContext>(
+    const contextValue = React.useMemo<SidebarContextValue>(
       () => ({
         state,
         open,
@@ -132,7 +155,7 @@ const SidebarProvider = React.forwardRef<
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH,
-                "--sidebar-width-icon": SIDEBAR_WIDTH_ICON, // Correctly uses "4rem"
+                "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
                 ...style,
               } as React.CSSProperties
             }
@@ -166,8 +189,8 @@ const Sidebar = React.forwardRef<
       variant = "sidebar",
       collapsible = "offcanvas",
       className,
-      children,
-      ...props
+      children, // Explicitly destructure children
+      ...props // All other props
     },
     ref
   ) => {
@@ -178,29 +201,40 @@ const Sidebar = React.forwardRef<
       setHasMounted(true)
     }, [])
 
-    // Initial render strategy for SSR and first client render before hydration
+    const isDynamicCollapsible = collapsible === "icon" || collapsible === "offcanvas";
+
     if (!hasMounted) {
-      if (collapsible === "icon" || collapsible === "offcanvas") {
-        // For dynamic sidebars, render null on server and initial client render
-        // to ensure server/client HTML matches before client-side logic takes over.
-        return null;
+      if (isDynamicCollapsible) {
+        // SSR placeholder for dynamic sidebars.
+        // It must NOT render its children from props.
+        // Pass only attributes safe for a div that won't cause mismatch.
+        // className from props (e.g., "border-sidebar-border bg-sidebar") is merged.
+        return (
+          <div
+            ref={ref}
+            className={cn("sidebar-ssr-placeholder", className)} 
+            style={{ display: 'none' }} // Ensures it takes no space and has minimal visual impact
+            data-ssr-placeholder="true"
+            // DO NOT SPREAD {...props} here if it includes children or other complex objects
+          />
+        );
+      } else { // collapsible === "none" (static sidebar)
+        // Static sidebar, render with children. props includes children.
+        return (
+          <div
+            data-sidebar="sidebar"
+            data-static-render="true" 
+            ref={ref}
+            className={cn(
+              "flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground",
+              className
+            )}
+            {...props} // Spreading props (which includes children) is intended here
+          >
+            {/* Children are rendered because `props` is spread */}
+          </div>
+        );
       }
-      // For collapsible="none" (static sidebar), the structure is consistent.
-      // Render its basic structure.
-      return (
-        <div
-          data-sidebar="sidebar"
-          data-static-render="true"
-          ref={ref}
-          className={cn(
-            "flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground",
-            className
-          )}
-          {...props}
-        >
-          {children}
-        </div>
-      );
     }
 
     // Client-side rendering after mount (hasMounted is true)
@@ -217,9 +251,9 @@ const Sidebar = React.forwardRef<
               } as React.CSSProperties
             }
             side={side}
-            {...props} 
+            // {...props} // Pass other props, excluding children if handled explicitly
           >
-            <div className="flex h-full w-full flex-col">{children}</div>
+            <div className="flex h-full w-full flex-col">{children}</div> {/* Pass children here */}
           </UISheetContent>
         </Sheet>
       )
@@ -234,7 +268,7 @@ const Sidebar = React.forwardRef<
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
         data-side={side}
-        {...props}
+        // {...props} // Pass other props, children are handled explicitly below
       >
         <div
           className={cn(
@@ -272,7 +306,7 @@ const Sidebar = React.forwardRef<
                  (variant === "floating" || variant === "inset") && "rounded-lg border border-sidebar-border shadow"
             )}
           >
-            {children}
+            {children} {/* Render children for desktop sidebar */}
           </div>
         </div>
       </div>
@@ -336,23 +370,24 @@ const SidebarRail = React.forwardRef<
 })
 SidebarRail.displayName = "SidebarRail"
 
-const SidebarInset = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"main">
->(({ className, ...props }, ref) => {
-  return (
-    <main
-      ref={ref}
-      className={cn(
-        "relative flex min-h-svh flex-1 flex-col bg-background",
-        "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow",
-        className
-      )}
-      {...props}
-    />
-  )
-})
-SidebarInset.displayName = "SidebarInset"
+// SidebarInset is not used with the current MainLayout structure, can be removed if confirmed.
+// const SidebarInset = React.forwardRef<
+//   HTMLDivElement,
+//   React.ComponentProps<"main">
+// >(({ className, ...props }, ref) => {
+//   return (
+//     <main
+//       ref={ref}
+//       className={cn(
+//         "relative flex min-h-svh flex-1 flex-col bg-background",
+//         "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow",
+//         className
+//       )}
+//       {...props}
+//     />
+//   )
+// })
+// SidebarInset.displayName = "SidebarInset"
 
 const SidebarInput = React.forwardRef<
   React.ElementRef<typeof Input>,
@@ -601,8 +636,7 @@ const SidebarMenuButton = React.forwardRef<
     
     let tooltipPropsRest: Omit<React.ComponentProps<typeof TooltipContent>, 'children'> = {};
     if (typeof tooltip === 'object' && tooltip !== null) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { children: tooltipChildrenToExclude, ...rest } = tooltip;
+      const { children: _tooltipChildren, ...rest } = tooltip;
       tooltipPropsRest = rest;
     }
     const tooltipProps = typeof tooltip === "string" ? {} : tooltipPropsRest;
@@ -776,7 +810,7 @@ export {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarInput,
-  SidebarInset,
+  // SidebarInset, // Commented out as it's not actively used
   SidebarMenu,
   SidebarMenuAction,
   SidebarMenuBadge,
@@ -792,5 +826,3 @@ export {
   SidebarTrigger,
   useSidebar,
 }
-
-    
