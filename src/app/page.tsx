@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, Lightbulb, ListChecks, NotebookText, MessageSquareQuestion, Sparkles } from "lucide-react"; // Added MessageSquareQuestion and Sparkles
+import { ArrowRight, Lightbulb, ListChecks, NotebookText, MessageSquareQuote, Sparkles } from "lucide-react"; // Changed MessageSquareQuestion to MessageSquareQuote
 import Image from "next/image";
 import { APP_NAME } from "@/config/app";
 
@@ -37,7 +37,7 @@ export default function DashboardPage() {
               title="Conceptor AI"
               description="Ask anything! Get insightful answers."
               href="/conceptor"
-              icon={<MessageSquareQuestion className="w-8 h-8 text-primary" />}
+              icon={<MessageSquareQuote className="w-8 h-8 text-primary" />} // Changed
             />
             <DashboardActionCard
               title="Quick Notes"

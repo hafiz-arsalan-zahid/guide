@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Loader2, Sparkles, MessageSquareQuestion, ShieldAlert, Lock, Unlock } from "lucide-react";
+import { Loader2, Sparkles, MessageSquareQuote, ShieldAlert, Lock, Unlock } from "lucide-react"; // Changed MessageSquareQuestion to MessageSquareQuote
 import { generateConceptorResponse } from "@/ai/flows/generate-conceptor-response-flow";
 import type { GenerateConceptorOutput } from "@/ai/flows/generate-conceptor-response-flow";
 import { useToast } from "@/hooks/use-toast";
@@ -145,7 +145,7 @@ export default function ConceptorPage() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl font-semibold flex items-center gap-2">
-            <MessageSquareQuestion className="h-7 w-7 text-primary" /> Conceptor AI
+            <MessageSquareQuote className="h-7 w-7 text-primary" /> Conceptor AI 
           </CardTitle>
           <CardDescription>
             Ask any question, explore any concept. Conceptor is here to help you understand. {isLocked && "(Unlock to use)"}
