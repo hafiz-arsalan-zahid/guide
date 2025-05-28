@@ -1,40 +1,47 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, Lightbulb, ListChecks, NotebookText } from "lucide-react";
+import { ArrowRight, Lightbulb, ListChecks, NotebookText, MessageSquareQuestion, Sparkles } from "lucide-react"; // Added MessageSquareQuestion and Sparkles
 import Image from "next/image";
 import { APP_NAME } from "@/config/app";
 
 export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
-      <Card className="shadow-lg">
+      <Card className="shadow-lg border-primary/30">
         <CardHeader className="pb-4">
-          <CardTitle className="text-3xl font-bold">Welcome to {APP_NAME}!</CardTitle>
-          <CardDescription className="text-lg">
-            Your central place to organize tasks, manage studies, and boost productivity.
+          <div className="flex items-center gap-3 mb-2">
+            <Sparkles className="w-10 h-10 text-primary" />
+            <CardTitle className="text-4xl font-bold tracking-tight">Welcome to {APP_NAME}!</CardTitle>
+          </div>
+          <CardDescription className="text-lg text-muted-foreground">
+            Your intelligent dashboard to learn, organize, and achieve. Explore your tools below.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="mb-6">
-            Navigate through your tools using the sidebar. Let's get things done!
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">
             <DashboardActionCard
               title="My Todos"
-              description="Stay on top of your tasks."
+              description="Organize your tasks and deadlines."
               href="/todos"
               icon={<ListChecks className="w-8 h-8 text-primary" />}
             />
             <DashboardActionCard
               title="AI Study Guide"
-              description="Get smart study suggestions."
+              description="Get smart study suggestions for exams."
               href="/study-guide"
               icon={<Lightbulb className="w-8 h-8 text-primary" />}
             />
             <DashboardActionCard
+              title="Conceptor AI"
+              description="Ask anything! Get insightful answers."
+              href="/conceptor"
+              icon={<MessageSquareQuestion className="w-8 h-8 text-primary" />}
+            />
+            <DashboardActionCard
               title="Quick Notes"
-              description="Jot down your thoughts."
+              description="Jot down ideas and thoughts instantly."
               href="/notes"
               icon={<NotebookText className="w-8 h-8 text-primary" />}
             />
@@ -44,13 +51,19 @@ export default function DashboardPage() {
 
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle>Productivity Tip</CardTitle>
+          <CardTitle>Productivity Tip of the Day</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center gap-4">
-          <Image src="https://placehold.co/100x100.png" alt="Productivity illustration" width={100} height={100} className="rounded-md" data-ai-hint="illustration productivity" />
+        <CardContent className="flex flex-col sm:flex-row items-center gap-4">
+          <Image 
+            src="https://placehold.co/120x120.png" 
+            alt="Productivity illustration" 
+            width={100} 
+            height={100} 
+            className="rounded-lg shadow-sm shrink-0" 
+            data-ai-hint="abstract idea" />
           <div>
-            <p className="text-muted-foreground">
-              Break down large tasks into smaller, manageable steps. This makes them less daunting and easier to start. Celebrate small wins!
+            <p className="text-muted-foreground text-base">
+              <strong>The Pomodoro Technique:</strong> Work in focused 25-minute intervals (Pomodoros) separated by short 5-minute breaks. After four Pomodoros, take a longer 15-30 minute break. This helps maintain concentration and prevent burnout.
             </p>
           </div>
         </CardContent>
@@ -68,16 +81,16 @@ interface DashboardActionCardProps {
 
 function DashboardActionCard({ title, description, href, icon }: DashboardActionCardProps) {
   return (
-    <Card className="hover:shadow-xl transition-shadow duration-300">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <Card className="hover:shadow-xl hover:border-primary/50 transition-all duration-300 ease-in-out flex flex-col">
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <CardTitle className="text-xl font-semibold">{title}</CardTitle>
         {icon}
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-grow flex flex-col justify-between">
         <p className="text-sm text-muted-foreground mb-4">{description}</p>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="sm" className="mt-auto w-full sm:w-auto self-start">
           <Link href={href}>
-            Go to {title.split(' ')[1] || title} <ArrowRight className="ml-2 h-4 w-4" />
+            Explore <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>
       </CardContent>
