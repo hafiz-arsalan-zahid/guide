@@ -58,7 +58,7 @@ export function AppSidebar() {
           <SidebarMenu
             className={cn(
               "group-data-[state=collapsed]/peer:p-2",
-              "group-data-[state=expanded]/peer:px-3 group-data-[state=expanded]/peer:py-2"
+              "group-data-[state=expanded]/peer:px-4 group-data-[state=expanded]/peer:py-2" // Changed px-3 to px-4
             )}
           >
             {NAV_ITEMS.map((item) => {
@@ -99,3 +99,4 @@ export function AppSidebar() {
     </UISidebar>
   );
 }
+
